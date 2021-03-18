@@ -9,61 +9,63 @@ import UIKit
 import CoreML
 import Vision
 
-class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+final class ViewController: UIViewController {
     
     // MARK: - Outlets
     
-    @IBOutlet weak var imageView: UIImageView!
+    @IBOutlet private weak var imageView: UIImageView!
     
     // MARK: - Properties
     
-    let imagePicker = UIImagePickerController()
+    private let imagePicker = UIImagePickerController()
     
     // MARK: - Actions
     
-    @IBAction func cameraTapped(_ sender: UIBarButtonItem) {
+    @IBAction private func cameraTapped(_ sender: UIBarButtonItem) {
         present(imagePicker, animated: true, completion: nil)
     }
     
     // MARK: - View Life Cycle
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        imagePicker.delegate = self
-        imagePicker.sourceType = .camera
-        imagePicker.allowsEditing = false
+        setImagePicker()
     }
-    
-    // MARK: - Methods
+}
 
+// MARK: - Extension UIImagePickerControllerDelegate, UINavigationControllerDelegate
+
+extension ViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         
         if let userPickedImage = info[UIImagePickerController.InfoKey.originalImage] as? UIImage {
             imageView.image = userPickedImage
             
-            guard let ciimage = CIImage(image: userPickedImage) else {
+            guard let ciImage = CIImage(image: userPickedImage) else {
 //                return
                 fatalError("Could not convert UIImage into CIImage")
             }
-            detect(image: ciimage)
+            detect(image: ciImage)
         }
         imagePicker.dismiss(animated: true, completion: nil)
     }
     
-    func detect(image: CIImage) {
-//        guard let model = try? VNCoreMLModel(for: Inceptionv3().model) else {
+    private func setImagePicker() {
+        imagePicker.delegate = self
+        imagePicker.sourceType = .camera
+        imagePicker.allowsEditing = false
+    }
+    
+    private func detect(image: CIImage) {
         guard let model = try? VNCoreMLModel(for: Inceptionv3(configuration: .init()).model) else {
-//            return
-            fatalError("Loading CoreML Model failed")
+            fatalError("Loading CoreML Model failed") // return
         }
         
         let request = VNCoreMLRequest(model: model) { (request, error) in
             guard let results = request.results as? [VNClassificationObservation] else {
-//                return
-                fatalError("Model failed to process image.")
+                fatalError("Model failed to process image.") // return
             }
-            
             
             if let firstResult = results.first {
                 self.navigationItem.title = firstResult.identifier.capitalized
@@ -73,7 +75,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
 //                    self.navigationItem.title = "Not Hotdog !"
 //                }
             }
-            print(results)
+            print(results[0], results[1], results[2])
         }
         
         let handler = VNImageRequestHandler(ciImage: image)
@@ -83,6 +85,4 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
             print(error)
         }
     }
-
 }
-
