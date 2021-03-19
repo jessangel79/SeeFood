@@ -8,7 +8,6 @@
 import UIKit
 import CoreML
 import Vision
-//import 
 
 final class ViewController: UIViewController {
     
